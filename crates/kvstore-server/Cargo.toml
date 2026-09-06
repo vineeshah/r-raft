@@ -1,0 +1,22 @@
+[package]
+name = "kvstore-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "KV store node: wires the Raft core to a tonic/tokio transport"
+
+[[bin]]
+name = "kvstored"
+path = "src/main.rs"
+
+[dependencies]
+kvstore-proto.workspace = true
+kvstore-raft.workspace = true
+kvstore-storage.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true

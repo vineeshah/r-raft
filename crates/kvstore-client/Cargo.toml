@@ -1,0 +1,18 @@
+[package]
+name = "kvstore-client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Client library and CLI for the distributed KV store"
+
+[[bin]]
+name = "kvctl"
+path = "src/main.rs"
+
+[dependencies]
+kvstore-proto.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+clap.workspace = true
+anyhow.workspace = true
