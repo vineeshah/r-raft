@@ -18,8 +18,17 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod config;
+pub mod message;
+pub mod node;
 pub mod storage;
+pub mod testing;
 
+pub use config::Config;
+pub use message::{
+    Action, AppendEntries, AppendEntriesResp, Message, RequestVote, RequestVoteResp,
+};
+pub use node::RaftNode;
 pub use storage::{HardState, LogEntry, RaftStorage, Snapshot, StateMachine};
 
 /// A node identifier within a Raft group.
