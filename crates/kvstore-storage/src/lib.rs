@@ -1,21 +1,20 @@
 //! Durable storage layer for the KV store.
 //!
-//! Provides the persistence implementations the Raft core depends on:
-//! - `RaftStorage`: durable log, hard state, and snapshots.
-//! - `StateMachine`: applies committed commands to the user-visible key space.
+//! Provides the persistence implementations the Raft core depends on, backed by
+//! a single RocksDB database per node:
+//! - [`RocksRaftStorage`] implements [`kvstore_raft::RaftStorage`] — the
+//!   replicated log, hard state, and snapshots.
+//! - [`KvStateMachine`] implements [`kvstore_raft::StateMachine`] — committed
+//!   [`Command`]s applied to the user-visible key space.
 //!
-//! Both are backed by RocksDB (added in Phase 1) using separate column families
-//! for the Raft log, metadata, and application data.
+//! Open the database with [`RocksEngine::open`], then take the two views.
 
 #![forbid(unsafe_code)]
 
-/// Placeholder marker until the RocksDB-backed engine lands in Phase 1.
-pub const ENGINE: &str = "rocksdb";
+pub mod command;
+pub mod engine;
+pub mod error;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn engine_is_rocksdb() {
-        assert_eq!(super::ENGINE, "rocksdb");
-    }
-}
+pub use command::{Command, CommandResult};
+pub use engine::{KvStateMachine, RocksEngine, RocksRaftStorage};
+pub use error::StorageError;
