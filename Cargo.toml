@@ -1,0 +1,59 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kvstore-proto",
+    "crates/kvstore-raft",
+    "crates/kvstore-storage",
+    "crates/kvstore-server",
+    "crates/kvstore-client",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/vineeshah/cameron"
+authors = ["Vinee Shah"]
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+futures = "0.3"
+
+# gRPC / protobuf
+tonic = "0.12"
+tonic-build = "0.12"
+prost = "0.13"
+
+# Storage
+rocksdb = "0.22"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+
+# CLI / config
+clap = { version = "4", features = ["derive", "env"] }
+
+# Errors
+thiserror = "1"
+anyhow = "1"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Testing
+proptest = "1"
+
+# Internal crates
+kvstore-proto = { path = "crates/kvstore-proto" }
+kvstore-raft = { path = "crates/kvstore-raft" }
+kvstore-storage = { path = "crates/kvstore-storage" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

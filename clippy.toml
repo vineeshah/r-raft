@@ -1,0 +1,3 @@
+# Clippy configuration
+# Keep cognitive complexity in check for the Raft state machine.
+cognitive-complexity-threshold = 30
