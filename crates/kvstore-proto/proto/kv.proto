@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package kvstore.v1;
+
+// Client-facing key-value service.
+service Kv {
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Put(PutRequest) returns (PutResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  // Compare-and-swap: set key to new_value only if current value == expected.
+  rpc CompareAndSwap(CasRequest) returns (CasResponse);
+}
+
+message GetRequest {
+  bytes key = 1;
+  // If true, route through the leader for a linearizable read.
+  bool linearizable = 2;
+}
+
+message GetResponse {
+  bool found = 1;
+  bytes value = 2;
+}
+
+message PutRequest {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message PutResponse {}
+
+message DeleteRequest {
+  bytes key = 1;
+}
+
+message DeleteResponse {}
+
+message CasRequest {
+  bytes key = 1;
+  // Absent expected => key must not exist.
+  optional bytes expected = 2;
+  bytes new_value = 3;
+}
+
+message CasResponse {
+  bool swapped = 1;
+}
