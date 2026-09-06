@@ -1,0 +1,18 @@
+[package]
+name = "kvstore-storage"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Durable storage: RaftStorage and StateMachine implementations over RocksDB"
+
+[dependencies]
+kvstore-raft.workspace = true
+serde.workspace = true
+bincode.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+tempfile = "3"
