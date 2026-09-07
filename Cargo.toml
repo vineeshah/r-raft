@@ -6,6 +6,7 @@ members = [
     "crates/kvstore-storage",
     "crates/kvstore-server",
     "crates/kvstore-client",
+    "crates/kvstore-sim",
     "xtask",
 ]
 

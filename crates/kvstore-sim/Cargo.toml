@@ -1,0 +1,15 @@
+[package]
+name = "kvstore-sim"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Deterministic simulation testing and linearizability checking for the Raft core"
+
+[dependencies]
+kvstore-raft.workspace = true
+serde.workspace = true
+bincode.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
