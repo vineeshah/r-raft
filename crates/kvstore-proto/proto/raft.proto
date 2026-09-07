@@ -39,9 +39,10 @@ message AppendEntriesRequest {
 message AppendEntriesResponse {
   uint64 term = 1;
   bool success = 2;
+  // On success, the follower's highest matching index.
+  uint64 match_index = 3;
   // Hint for fast log backtracking on conflict.
-  uint64 conflict_index = 3;
-  uint64 conflict_term = 4;
+  uint64 conflict_index = 4;
 }
 
 message InstallSnapshotRequest {
