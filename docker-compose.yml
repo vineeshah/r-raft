@@ -1,0 +1,49 @@
+# Local 3-node cluster. Each node listens on 5400 internally; host ports
+# 5401-5403 map to the three nodes so kvctl can reach any of them.
+#
+#   docker compose up --build      # start the cluster
+#   kvctl --endpoint http://127.0.0.1:5401 put foo bar
+#   docker compose stop node1      # kill a node; the cluster keeps serving
+name: cameron-kv
+
+services:
+  node1:
+    build: .
+    command: >
+      --node-id 1 --listen 0.0.0.0:5400
+      --peer 2=node2:5400 --peer 3=node3:5400
+    environment:
+      RUST_LOG: info
+    ports:
+      - "5401:5400"
+    volumes:
+      - node1-data:/data
+
+  node2:
+    build: .
+    command: >
+      --node-id 2 --listen 0.0.0.0:5400
+      --peer 1=node1:5400 --peer 3=node3:5400
+    environment:
+      RUST_LOG: info
+    ports:
+      - "5402:5400"
+    volumes:
+      - node2-data:/data
+
+  node3:
+    build: .
+    command: >
+      --node-id 3 --listen 0.0.0.0:5400
+      --peer 1=node1:5400 --peer 2=node2:5400
+    environment:
+      RUST_LOG: info
+    ports:
+      - "5403:5400"
+    volumes:
+      - node3-data:/data
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:

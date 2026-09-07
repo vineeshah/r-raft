@@ -1,8 +1,11 @@
 //! Developer task runner. Invoke with `cargo xtask <task>`.
 //!
 //! Centralizes repetitive dev workflows so contributors don't memorize long
-//! command lines. Tasks are filled in as the corresponding phases land.
+//! command lines.
 
+use std::process::Command as Proc;
+
+use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -14,20 +17,29 @@ struct Args {
 
 #[derive(Debug, Subcommand)]
 enum Task {
-    /// Bring up a local multi-node cluster (Phase 3).
+    /// Build and start the local 3-node docker cluster.
     ClusterUp,
-    /// Tear down the local cluster (Phase 3).
+    /// Stop and remove the local cluster.
     ClusterDown,
     /// Run the benchmark suite (Phase 4).
     Bench,
 }
 
-fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
-    match args.task {
-        Task::ClusterUp => println!("cluster-up: not yet implemented (Phase 3)"),
-        Task::ClusterDown => println!("cluster-down: not yet implemented (Phase 3)"),
-        Task::Bench => println!("bench: not yet implemented (Phase 4)"),
+fn compose(args: &[&str]) -> Result<()> {
+    let status = Proc::new("docker").arg("compose").args(args).status()?;
+    if !status.success() {
+        bail!("`docker compose {}` failed", args.join(" "));
     }
     Ok(())
+}
+
+fn main() -> Result<()> {
+    match Args::parse().task {
+        Task::ClusterUp => compose(&["up", "--build", "-d"]),
+        Task::ClusterDown => compose(&["down", "-v"]),
+        Task::Bench => {
+            println!("bench: not yet implemented (Phase 4)");
+            Ok(())
+        }
+    }
 }
