@@ -1,9 +1,7 @@
 //! `kvstored` — a single node of the distributed KV store.
-//!
-//! Phase 0: parses configuration and initializes tracing. The Raft runtime and
-//! gRPC services are wired in Phase 3.
 
 use clap::Parser;
+use kvstore_server::{run, NodeConfig};
 
 /// Command-line configuration for a KV store node.
 #[derive(Debug, Parser)]
@@ -24,9 +22,14 @@ struct Args {
     /// Peer addresses in the form `id=host:port`, repeatable.
     #[arg(long = "peer")]
     peers: Vec<String>,
+
+    /// Milliseconds per logical Raft tick.
+    #[arg(long, env = "KV_TICK_MS", default_value_t = 50)]
+    tick_ms: u64,
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
@@ -34,13 +37,12 @@ fn main() -> anyhow::Result<()> {
         .init();
 
     let args = Args::parse();
-    tracing::info!(
-        node_id = args.node_id,
-        listen = %args.listen,
-        data_dir = %args.data_dir,
-        peers = ?args.peers,
-        "kvstored starting (scaffold — runtime lands in Phase 3)"
-    );
-
-    Ok(())
+    let cfg = NodeConfig::build(
+        args.node_id,
+        args.listen,
+        args.data_dir,
+        &args.peers,
+        args.tick_ms,
+    )?;
+    run(cfg).await
 }
