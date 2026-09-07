@@ -1,14 +1,14 @@
 //! `kvctl` — command-line client for the distributed KV store.
-//!
-//! Phase 0: defines the command surface. Wire-up to the gRPC `Kv` service lands
-//! in Phase 3.
 
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use kvstore_proto::kv::kv_client::KvClient;
+use kvstore_proto::kv::{DeleteRequest, GetRequest, PutRequest};
 
 #[derive(Debug, Parser)]
 #[command(name = "kvctl", version, about)]
 struct Args {
-    /// Address of any cluster node.
+    /// Address of any cluster node (writes are redirected to the leader).
     #[arg(long, env = "KV_ENDPOINT", default_value = "http://127.0.0.1:5400")]
     endpoint: String,
 
@@ -22,6 +22,9 @@ enum Command {
     Get {
         /// The key to read.
         key: String,
+        /// Route through the leader for a linearizable read.
+        #[arg(long)]
+        linearizable: bool,
     },
     /// Write a value for a key.
     Put {
@@ -37,14 +40,45 @@ enum Command {
     },
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Args::parse();
+    let mut client = KvClient::connect(args.endpoint.clone())
+        .await
+        .with_context(|| format!("connecting to {}", args.endpoint))?;
+
     match args.command {
-        Command::Get { key } => println!("(scaffold) GET {key} @ {}", args.endpoint),
-        Command::Put { key, value } => {
-            println!("(scaffold) PUT {key}={value} @ {}", args.endpoint)
+        Command::Get { key, linearizable } => {
+            let resp = client
+                .get(GetRequest {
+                    key: key.into_bytes(),
+                    linearizable,
+                })
+                .await?
+                .into_inner();
+            if resp.found {
+                println!("{}", String::from_utf8_lossy(&resp.value));
+            } else {
+                println!("(nil)");
+            }
         }
-        Command::Delete { key } => println!("(scaffold) DELETE {key} @ {}", args.endpoint),
+        Command::Put { key, value } => {
+            client
+                .put(PutRequest {
+                    key: key.into_bytes(),
+                    value: value.into_bytes(),
+                })
+                .await?;
+            println!("OK");
+        }
+        Command::Delete { key } => {
+            client
+                .delete(DeleteRequest {
+                    key: key.into_bytes(),
+                })
+                .await?;
+            println!("OK");
+        }
     }
     Ok(())
 }
