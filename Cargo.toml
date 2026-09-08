@@ -46,9 +46,12 @@ anyhow = "1"
 # Observability
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.16", default-features = false, features = ["http-listener"] }
 
 # Testing
 proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
 
 # Internal crates
 kvstore-proto = { path = "crates/kvstore-proto" }
