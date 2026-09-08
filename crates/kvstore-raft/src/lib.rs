@@ -18,6 +18,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod storage;
+
+pub use storage::{HardState, LogEntry, RaftStorage, Snapshot, StateMachine};
+
 /// A node identifier within a Raft group.
 pub type NodeId = u64;
 
