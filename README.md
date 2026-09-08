@@ -46,6 +46,12 @@ The Raft core is deliberately **side-effect-free**: it consumes messages and
 logical ticks, and emits actions for the host to perform. That single decision
 makes the whole cluster runnable inside one deterministic simulation.
 
+**Sharding (multi-Raft).** To scale writes past a single group, the keyspace is
+range-partitioned across many independent Raft groups (as in TiKV/CockroachDB), so
+disjoint key ranges commit in parallel and a fault in one shard's group can't take
+down another. This is implemented and verified in `kvstore-sim` (routing,
+per-shard consensus, cross-shard linearizability, fault isolation).
+
 ## Roadmap
 
 - [x] **Phase 0** — workspace, tooling, CI/CD, protobuf pipeline
@@ -53,7 +59,9 @@ makes the whole cluster runnable inside one deterministic simulation.
 - [x] **Phase 2** — Raft from scratch (election, replication, commit, recovery)
 - [x] **Phase 3** — gRPC networking, `kvctl`, docker-compose cluster
 - [x] **Phase 4** — deterministic simulation, linearizability checking, observability, benchmarks
-- [ ] **Phase 5** — multi-Raft sharding (range partitioning, routing, rebalancing)
+- [x] **Phase 5** — multi-Raft sharding: range partitioning + routing + per-shard
+  fault isolation, modeled and verified in the simulator (networked-server
+  integration with a live placement driver is the next step)
 
 ## Correctness & performance
 
