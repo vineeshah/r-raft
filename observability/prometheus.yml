@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: cameron-kv
+    static_configs:
+      - targets:
+          - node1:9400
+          - node2:9400
+          - node3:9400
+        labels:
+          cluster: cameron
