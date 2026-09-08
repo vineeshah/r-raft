@@ -18,8 +18,10 @@ pub mod kv;
 pub mod linearizability;
 pub mod net;
 pub mod rng;
+pub mod shard;
 pub mod sim;
 
 pub use kv::{KvOp, KvOutput};
 pub use linearizability::{is_linearizable, Op};
+pub use shard::{ShardMap, ShardedCluster};
 pub use sim::{SimConfig, Simulator};
