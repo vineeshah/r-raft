@@ -1,0 +1,20 @@
+/target
+**/*.rs.bk
+Cargo.lock.orig
+*.pdb
+
+# Runtime data
+/data
+**/data/
+*.log
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Coverage
+/coverage
+*.profraw
+lcov.info

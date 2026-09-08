@@ -1,0 +1,15 @@
+[package]
+name = "kvstore-raft"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "From-scratch Raft consensus core: pure, deterministic, I/O-free state machine"
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
