@@ -38,7 +38,12 @@ fn main() -> Result<()> {
         Task::ClusterUp => compose(&["up", "--build", "-d"]),
         Task::ClusterDown => compose(&["down", "-v"]),
         Task::Bench => {
-            println!("bench: not yet implemented (Phase 4)");
+            let status = Proc::new(env!("CARGO"))
+                .args(["bench", "--workspace"])
+                .status()?;
+            if !status.success() {
+                bail!("cargo bench failed");
+            }
             Ok(())
         }
     }

@@ -1,47 +1,77 @@
-# Local 3-node cluster. Each node listens on 5400 internally; host ports
-# 5401-5403 map to the three nodes so kvctl can reach any of them.
+# Local 3-node cluster with observability. Each node listens on 5400 (gRPC) and
+# 9400 (Prometheus metrics) internally; host ports 5401-5403 and 9401-9403 map
+# to the three nodes. Prometheus scrapes them and Grafana visualizes.
 #
-#   docker compose up --build      # start the cluster
+#   docker compose up --build      # start cluster + prometheus + grafana
 #   kvctl --endpoint http://127.0.0.1:5401 put foo bar
-#   docker compose stop node1      # kill a node; the cluster keeps serving
+#   open http://localhost:3000     # Grafana (anonymous admin), dashboard "Cameron KV — Raft"
+#   docker compose stop node1      # kill a node; watch leadership move in Grafana
 name: cameron-kv
+
+x-node-common: &node-common
+  build: .
+  environment:
+    RUST_LOG: info
 
 services:
   node1:
-    build: .
+    <<: *node-common
     command: >
-      --node-id 1 --listen 0.0.0.0:5400
+      --node-id 1 --listen 0.0.0.0:5400 --metrics-listen 0.0.0.0:9400
       --peer 2=node2:5400 --peer 3=node3:5400
-    environment:
-      RUST_LOG: info
     ports:
       - "5401:5400"
+      - "9401:9400"
     volumes:
       - node1-data:/data
 
   node2:
-    build: .
+    <<: *node-common
     command: >
-      --node-id 2 --listen 0.0.0.0:5400
+      --node-id 2 --listen 0.0.0.0:5400 --metrics-listen 0.0.0.0:9400
       --peer 1=node1:5400 --peer 3=node3:5400
-    environment:
-      RUST_LOG: info
     ports:
       - "5402:5400"
+      - "9402:9400"
     volumes:
       - node2-data:/data
 
   node3:
-    build: .
+    <<: *node-common
     command: >
-      --node-id 3 --listen 0.0.0.0:5400
+      --node-id 3 --listen 0.0.0.0:5400 --metrics-listen 0.0.0.0:9400
       --peer 1=node1:5400 --peer 2=node2:5400
-    environment:
-      RUST_LOG: info
     ports:
       - "5403:5400"
+      - "9403:9400"
     volumes:
       - node3-data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - node1
+      - node2
+      - node3
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
 
 volumes:
   node1-data:

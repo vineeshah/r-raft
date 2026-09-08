@@ -121,6 +121,7 @@ pub struct Driver {
     peers: HashMap<NodeId, String>,
     waiters: HashMap<LogIndex, oneshot::Sender<ProposeReply>>,
     tx: mpsc::Sender<Event>,
+    was_leader: bool,
 }
 
 impl Driver {
@@ -139,6 +140,7 @@ impl Driver {
             peers,
             waiters: HashMap::new(),
             tx,
+            was_leader: false,
         };
         (driver, handle, rx)
     }
@@ -170,6 +172,7 @@ impl Driver {
             Event::Propose { command, reply } => {
                 match self.node.propose(command)? {
                     Some((index, actions)) => {
+                        metrics::counter!("kv_proposals_total").increment(1);
                         // Register before routing: a single-node cluster applies
                         // synchronously inside route().
                         self.waiters.insert(index, reply);
@@ -193,7 +196,21 @@ impl Driver {
                 }
             }
         }
+        self.record_metrics();
         Ok(())
+    }
+
+    /// Publish current consensus state to the metrics registry. These are cheap
+    /// no-ops if no Prometheus recorder is installed (e.g. in tests).
+    fn record_metrics(&mut self) {
+        let is_leader = self.node.is_leader();
+        metrics::gauge!("kv_raft_term").set(self.node.current_term() as f64);
+        metrics::gauge!("kv_raft_commit_index").set(self.node.commit_index() as f64);
+        metrics::gauge!("kv_is_leader").set(if is_leader { 1.0 } else { 0.0 });
+        if is_leader && !self.was_leader {
+            metrics::counter!("kv_leader_changes_total").increment(1);
+        }
+        self.was_leader = is_leader;
     }
 
     /// Execute actions, sending the reply to `from` back through `reply` instead
@@ -231,6 +248,7 @@ impl Driver {
         for entry in entries {
             match self.sm.apply(&entry.command) {
                 Ok(result) => {
+                    metrics::counter!("kv_raft_applied_total").increment(1);
                     if let Some(waiter) = self.waiters.remove(&entry.index) {
                         let _ = waiter.send(ProposeReply::Applied(result));
                     }

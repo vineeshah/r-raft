@@ -26,6 +26,10 @@ struct Args {
     /// Milliseconds per logical Raft tick.
     #[arg(long, env = "KV_TICK_MS", default_value_t = 50)]
     tick_ms: u64,
+
+    /// Address to expose Prometheus metrics on (`/metrics`).
+    #[arg(long, env = "KV_METRICS_LISTEN", default_value = "127.0.0.1:9400")]
+    metrics_listen: std::net::SocketAddr,
 }
 
 #[tokio::main]
@@ -37,6 +41,14 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let args = Args::parse();
+
+    // Install the Prometheus exporter once per process; it serves /metrics on
+    // its own HTTP listener.
+    metrics_exporter_prometheus::PrometheusBuilder::new()
+        .with_http_listener(args.metrics_listen)
+        .install()?;
+    tracing::info!(metrics = %args.metrics_listen, "metrics endpoint listening");
+
     let cfg = NodeConfig::build(
         args.node_id,
         args.listen,

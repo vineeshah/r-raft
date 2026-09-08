@@ -39,6 +39,7 @@ misbehaves.
 | `kvstore-storage` | `RaftStorage` + `StateMachine` over RocksDB |
 | `kvstore-server` | `kvstored` node: wires Raft to tonic/tokio |
 | `kvstore-client` | `kvctl` CLI + client library |
+| `kvstore-sim` | Deterministic simulator, fault injection, linearizability checker |
 | `xtask` | Developer task runner (cluster up/down, bench) |
 
 The Raft core is deliberately **side-effect-free**: it consumes messages and
@@ -51,14 +52,38 @@ makes the whole cluster runnable inside one deterministic simulation.
 - [x] **Phase 1** — RocksDB storage engine (log, hard state, snapshots, recovery)
 - [x] **Phase 2** — Raft from scratch (election, replication, commit, recovery)
 - [x] **Phase 3** — gRPC networking, `kvctl`, docker-compose cluster
-- [ ] **Phase 4** — deterministic simulation, linearizability checking, observability, benchmarks
+- [x] **Phase 4** — deterministic simulation, linearizability checking, observability, benchmarks
 - [ ] **Phase 5** — multi-Raft sharding (range partitioning, routing, rebalancing)
+
+## Correctness & performance
+
+Consensus is only worth anything if it's correct under failure, so correctness
+is tested directly rather than hoped for:
+
+- **Deterministic simulation (`kvstore-sim`).** The pure core runs inside a
+  single-process simulator with a virtual, seeded network: randomized message
+  delay/reorder, drops, partitions, and node crash/restart. Every run is
+  reproducible from its seed, so a bug found once reproduces exactly.
+- **Continuous safety invariants.** The simulator asserts *at most one leader
+  per term* and *no two different entries committed at the same index* on every
+  tick.
+- **Linearizability checking.** A from-scratch Wing–Gong/Lowe checker verifies
+  the recorded client history is linearizable — under faults, not just on the
+  happy path. Its own unit tests confirm it *rejects* non-linearizable histories
+  (so passing means something).
+- **Observability.** Prometheus metrics (`kv_raft_term`, `kv_raft_commit_index`,
+  `kv_is_leader`, applied/proposal counters, leader changes) via a `/metrics`
+  endpoint, with a provisioned Grafana dashboard in the compose stack.
+- **Benchmarks (criterion).** e.g. the 3-node consensus + apply path commits
+  **~326K writes/sec** in the in-memory simulator (pure algorithm, no disk or
+  network), and RocksDB state-machine put/get throughput. Run `cargo xtask
+  bench`.
 
 ## Tech stack
 
 Rust · tokio · tonic/prost (gRPC) · RocksDB · tracing + Prometheus + Grafana ·
-madsim (deterministic simulation) · proptest · criterion · GitHub Actions ·
-Docker Compose
+custom deterministic simulator + linearizability checker · proptest · criterion ·
+GitHub Actions · Docker Compose
 
 ## Development
 

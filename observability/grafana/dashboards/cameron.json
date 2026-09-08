@@ -1,0 +1,67 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "schemaVersion": 39,
+  "title": "Cameron KV — Raft",
+  "tags": ["cameron", "raft"],
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "5s",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Leadership (1 = leader)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "expr": "kv_is_leader", "legendFormat": "{{instance}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Raft term",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "kv_raft_term", "legendFormat": "{{instance}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Commit index",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "kv_raft_commit_index", "legendFormat": "{{instance}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Applied entries / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "rate(kv_raft_applied_total[1m])", "legendFormat": "{{instance}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Proposals / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "rate(kv_proposals_total[1m])", "legendFormat": "{{instance}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Leader changes (5m)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "increase(kv_leader_changes_total[5m])", "legendFormat": "{{instance}}", "refId": "A" }
+      ]
+    }
+  ]
+}
